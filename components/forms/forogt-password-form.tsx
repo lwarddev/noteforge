@@ -34,20 +34,17 @@ import { authClient } from "@/lib/auth-client";
 
 const formSchema = z.object({
   email: z.email(),
-  password: z.string().min(8, "Password must be minimum 8 characters."),
 });
 
-export function LoginForm({
+export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
-      password: "",
     },
   });
 
@@ -56,33 +53,28 @@ export function LoginForm({
     if (isLoading) return;
     try {
       setIsLoading(true);
-      const response = await signInUser(values.email, values.password);
-      if (response.success) {
-        toast.success(response.message);
+      const { error } = await authClient.forgetPassword({
+        email: values.email,
+        redirectTo: "/reset-password",
+      });
+      if (!error) {
+        toast.success("Please check your email for a password reset link");
       } else {
-        toast.error(response.message);
+        toast.error("Something went wrong please try again");
       }
     } catch (error) {
       console.error(error);
     } finally {
       setIsLoading(false);
-      router.push("/dashboard");
     }
   }
-
-  const signInGoogle = async () => {
-    const data = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard",
-    });
-  };
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle>Password Reset</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your email below to request a password reset.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -105,58 +97,16 @@ export function LoginForm({
                     )}
                   />
                 </div>
-                <div className="grid gap-3">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center">
-                          <FormLabel>Password</FormLabel>
-                          <Link
-                            href="/forgot-password"
-                            className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                          >
-                            Forgot your password?
-                          </Link>
-                        </div>
 
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="********"
-                            {...field}
-                          />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
                 <div className="flex flex-col gap-3">
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      "Login"
+                      "Request Password Reset"
                     )}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={signInGoogle}
-                    type="button"
-                  >
-                    Login with Google
-                  </Button>
                 </div>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <Link href="/signup" className="underline underline-offset-4">
-                  Sign up
-                </Link>
               </div>
             </form>
           </Form>

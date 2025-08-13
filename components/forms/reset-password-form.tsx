@@ -24,34 +24,31 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { signInUser, signUpUser } from "@/server/users";
+import { signInUser } from "@/server/users";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const formSchema = z.object({
-  email: z.email(),
   password: z.string().min(8, "Password must be minimum 8 characters."),
-  name: z.string().min(1, "Name is required."),
-  confirmPassword: z.string().min(8),
+  confirmPassword: z.string().min(8, "Password must be minimum 8 characters."),
 });
 
-export function SignupForm({
+export function ResetPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
       password: "",
       confirmPassword: "",
-      name: "",
     },
   });
 
@@ -65,34 +62,31 @@ export function SignupForm({
     }
     try {
       setIsLoading(true);
-      const response = await signUpUser(
-        values.email,
-        values.password,
-        values.name
-      );
-      if (response.success) {
-        toast.success("Check your email for verification");
+      const { error } = await authClient.resetPassword({
+        newPassword: values.password,
+        token: token ?? "",
+      });
+      if (!error) {
+        toast.success("Password reset successfully");
+        router.push("/singin");
       } else {
-        toast.error(response.message);
+        toast.error("Something went wrong please try again");
       }
     } catch (error) {
       console.error(error);
     } finally {
       setIsLoading(false);
+      router.push("/dashboard");
     }
   }
-
-  const signInGoogle = async () => {
-    const data = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard",
-    });
-  };
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Sign up for a new account.</CardTitle>
+          <CardTitle>Reset Password</CardTitle>
+          <CardDescription>
+            Please enter your new password below
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -101,49 +95,11 @@ export function SignupForm({
                 <div className="grid gap-3">
                   <FormField
                     control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="test@example.com" {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <FormField
-                    control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center">
                           <FormLabel>Password</FormLabel>
-                          <Link
-                            href="#"
-                            className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                          >
-                            Forgot your password?
-                          </Link>
                         </div>
 
                         <FormControl>
@@ -182,30 +138,15 @@ export function SignupForm({
                     )}
                   />
                 </div>
-
                 <div className="flex flex-col gap-3">
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      "Sign Up"
+                      "Reset Password"
                     )}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    type="button"
-                    onClick={signInGoogle}
-                  >
-                    Login with Google
-                  </Button>
                 </div>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
-                <Link href="/signin" className="underline underline-offset-4">
-                  Sign in
-                </Link>
               </div>
             </form>
           </Form>
