@@ -75,8 +75,8 @@ export default function HeroSection() {
                           delayChildren: 0.75,
                         },
                       },
+                      ...transitionVariants,
                     },
-                    ...transitionVariants,
                   }}
                   className="mt-12 flex items-center gap-2"
                 >
@@ -117,8 +117,8 @@ export default function HeroSection() {
                       delayChildren: 0.75,
                     },
                   },
+                  ...transitionVariants,
                 },
-                ...transitionVariants,
               }}
             >
               <div className="relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
